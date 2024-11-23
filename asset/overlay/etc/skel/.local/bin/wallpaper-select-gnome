@@ -81,13 +81,13 @@ base_var_init () {
 	THE_CMD_DIR_PATH="${THE_BASE_DIR_PATH}"
 
 	if [ "none${THE_CMD_FILE_NAME}" = 'none' ]; then
-		THE_CMD_FILE_NAME="wallpaper-select-xfce"
+		THE_CMD_FILE_NAME="wallpaper-select-gnome"
 	fi
 
 	THE_CMD_FILE_PATH="${THE_CMD_DIR_PATH}/$THE_CMD_FILE_NAME"
 
-	## https://github.com/samwhelp/play-ubuntu-20.04-plan/blob/master/project/wallpaper-select/wallpaper-select-xfce/wallpaper-select-xfce
-	THE_SELF_UPDATE_URL='https://raw.githubusercontent.com/samwhelp/note-about-fzf/gh-pages/_demo/project/wallpaper-select/wallpaper-select-xfce/wallpaper-select-xfce'
+	## https://github.com/samwhelp/play-ubuntu-20.04-plan/blob/master/project/wallpaper-select/wallpaper-select-gnome/wallpaper-select-gnome
+	THE_SELF_UPDATE_URL='https://raw.githubusercontent.com/samwhelp/note-about-fzf/gh-pages/_demo/project/wallpaper-select/wallpaper-select-gnome/wallpaper-select-gnome'
 
 
 	THE_TMP_DIR_PATH="/tmp"
@@ -115,11 +115,8 @@ base_var_init () {
 	## ueberzug
 	THE_UEBERZUG_CTRL="/tmp/ueberzug-ctrl"
 
-	## xfce
-	THE_XFCE_BG_OPTION_LIST="0 1 2 3 4 5"
-	declare -g -A THE_XFCE_BG_OPTION_MAP=([none]=0 [center]=1 [tile]=2 [stretch]=3 [scale]=4 [zoom]=5)
-	##echo  ${THE_XFCE_BG_OPTION_MAP[zoomed]}
-
+	## gnome
+	THE_GNOME_BG_OPTION_LIST="cover center tile full extend fill"
 
 	## wallpaper
 	THE_WALLPAPER_DEFAULT_DIR_PATH="/usr/share/backgrounds"
@@ -183,8 +180,8 @@ base_var_dump () {
 	## ueberzug
 	util_debug_echo "THE_UEBERZUG_CTRL=$THE_UEBERZUG_CTRL"
 
-	## xfce
-	util_debug_echo "THE_XFCE_BG_OPTION_LIST=$THE_XFCE_BG_OPTION_LIST"
+	## gnome
+	util_debug_echo "THE_GNOME_BG_OPTION_LIST=$THE_GNOME_BG_OPTION_LIST"
 
 	## wallpaper
 	util_debug_echo "THE_WALLPAPER_DEFAULT_DIR_PATH=$THE_WALLPAPER_DEFAULT_DIR_PATH"
@@ -548,58 +545,30 @@ sys_ueberzug_ses_stop () {
 
 
 ################################################################################
-### Head: Sys / Xfce
+### Head: Sys / Gnome
 ##
 
 
-sys_xfce_wallpaper_set () {
+sys_gnome_wallpaper_set () {
 
 	local file_path="$1"
-	local bg_option="$2"
-	local screen=`xrandr --listactivemonitors | awk -F ' ' 'END {print $1}' | tr -d \:`
-	local monitor=`xrandr --listactivemonitors | awk -F ' ' 'END {print $2}' | tr -d \*+`
 
 
-	util_error_echo "xfconf-query --channel xfce4-desktop --property /backdrop/screen${screen}/monitor${monitor}/workspace0/last-image --set $file_path --type 'string' --create"
-	xfconf-query --channel xfce4-desktop --property "/backdrop/screen${screen}/monitor${monitor}/workspace0/last-image" --set "$file_path" --type 'string' --create
-
-	util_error_echo "xfconf-query --channel xfce4-desktop --property /backdrop/screen${screen}/monitor${monitor}/workspace0/image-style --set $bg_option --type 'int' --create"
-	xfconf-query --channel xfce4-desktop --property "/backdrop/screen${screen}/monitor${monitor}/workspace0/image-style" --set "$bg_option" --type 'int' --create
-
-
-	util_error_echo "xfconf-query --channel xfce4-desktop --property /backdrop/single-workspace-mode --set 'true' --type 'bool' --create"
-	xfconf-query --channel xfce4-desktop --property "/backdrop/single-workspace-mode" --set 'true' --type 'bool' --create
-
-
-	##
-	## ## image-style
-	## 0: None
-	## 1: Centered
-	## 2: Tiled
-	## 3: Stretched
-	## 4: Scaled
-	## 5: Zoomed
-	##
-	## > None for Color
-	##
-}
-
-
-sys_xfce_wallpaper_get () {
-
-	local screen=`xrandr --listactivemonitors | awk -F ' ' 'END {print $1}' | tr -d \:`
-	local monitor=`xrandr --listactivemonitors | awk -F ' ' 'END {print $2}' | tr -d \*+`
-
-	##util_debug_echo "xfconf-query --channel xfce4-desktop --property /backdrop/screen${screen}/monitor${monitor}/workspace0/last-image"
-	xfconf-query --channel xfce4-desktop --property "/backdrop/screen${screen}/monitor${monitor}/workspace0/last-image"
+	util_error_echo "gsettings set org.gnome.desktop.background picture-uri file://${file_path}"
+	gsettings set org.gnome.desktop.background picture-uri "file://${file_path}"
 
 }
 
-sys_xfce_find_bg_option_list () {
+
+sys_gnome_wallpaper_get () {
+
+	##util_debug_echo "gsettings get org.gnome.desktop.background picture-uri"
+	gsettings get org.gnome.desktop.background picture-uri | awk -F "'" '{print $2}' | awk -F 'file://' '{printf $2"\n"}'
+}
+
+sys_gnome_find_bg_option_list () {
 
 	local list="$THE_XFCE_BG_OPTION_LIST"
-
-	local allow=""
 
 	for allow in $list; do
 		echo "$allow"
@@ -608,38 +577,33 @@ sys_xfce_find_bg_option_list () {
 }
 
 
+sys_gnome_find_bg_option_list () {
 
-sys_xfce_map_bg_option () {
-	local key="$1"
-	echo "${THE_XFCE_BG_OPTION_MAP[$key]}"
+	local list="$THE_GNOME_BG_OPTION_LIST"
+
+	for allow in $list; do
+		echo "$allow"
+	done
+
 }
 
-sys_xfce_find_bg_option () {
+sys_gnome_find_bg_option () {
 	local option="$1"
-
-	if [ "none$option" = "none" ]; then
-		option="zoom"
-	fi
-
-	option="$(sys_xfce_map_bg_option "$option")"
-
-	local list="$THE_XFCE_BG_OPTION_LIST"
-
-	local allow=""
+	local list="$THE_GNOME_BG_OPTION_LIST"
 
 	for allow in $list; do
 		if [ "select_$allow" = "select_$option" ]; then
-			echo "$option"
+			echo "-$option"
 			return
 		fi
 	done
 
-	echo '5'
+	echo '-cover'
 }
 
 
 ##
-### Tail: Sys / Xfce
+### Tail: Sys / Gnome
 ################################################################################
 
 
@@ -656,7 +620,7 @@ sys_wallpaper_check_file_exist () {
 	fi
 
 	if [ -f "$target" ]; then
-		echo "$(realpath -s "$target")"
+		echo "$(realpath -s $target)"
 		return 0
 	fi
 
@@ -723,8 +687,8 @@ sys_wallpaper_select_cd_dir () {
 	#echo "sys_wallpaper_select_cd_dir"
 	#echo "$@"
 
-	## wallpaper-select-xfce list
-	## wallpaper-select-xfce list /usr/share/backgrounds
+	## wallpaper-select-gnome list
+	## wallpaper-select-gnome list /usr/share/backgrounds
 	local file_name=''
 
 	local choose="$1"
@@ -747,8 +711,8 @@ sys_wallpaper_select_exec_cd_dir () {
 	#echo "sys_wallpaper_select_cd_dir"
 	#echo "$@"
 
-	## wallpaper-select-xfce list
-	## wallpaper-select-xfce list /usr/share/backgrounds
+	## wallpaper-select-gnome list
+	## wallpaper-select-gnome list /usr/share/backgrounds
 	local file_name=''
 
 	local choose="$1"
@@ -776,8 +740,8 @@ sys_wallpaper_select_list_by_dir () {
 	#echo "sys_wallpaper_select_list_by_dir"
 	#echo "$@"
 
-	## wallpaper-select-xfce list
-	## wallpaper-select-xfce list /usr/share/backgrounds
+	## wallpaper-select-gnome list
+	## wallpaper-select-gnome list /usr/share/backgrounds
 	local file_name=''
 
 	local choose="$1"
@@ -821,7 +785,7 @@ mod_wallpaper_select_manjaro_prepare () {
 	#echo "mod_wallpaper_select_manjaro_prepare"
 	#echo "$@"
 
-	# wallpaper-select-xfce manjaro_prepare
+	# wallpaper-select-gnome manjaro_prepare
 
 	mod_wallpaper_select_manjaro_prepare_install_package
 
@@ -830,15 +794,15 @@ mod_wallpaper_select_manjaro_prepare () {
 
 mod_wallpaper_select_manjaro_prepare_install_package () {
 
-	util_error_echo "pamac install fzf ueberzug"
-	pamac install fzf ueberzug
+	util_error_echo "pamac install gnome fzf ueberzug"
+	pamac install gnome fzf ueberzug
 
 }
 
 ##
-## * https://discover.manjaro.org/packages/xfce
+## * https://discover.manjaro.org/packages/gnome
 ## * https://discover.manjaro.org/packages/fzf
-## * https://archlinux.org/packages/extra/x86_64/xfce/
+## * https://archlinux.org/packages/extra/x86_64/gnome/
 ## * https://archlinux.org/packages/community/x86_64/fzf/
 ## * https://archlinux.org/packages/community/x86_64/ueberzug/
 ##
@@ -856,7 +820,7 @@ mod_wallpaper_select_ubuntu_prepare () {
 	#echo "mod_wallpaper_select_ubuntu_prepare"
 	#echo "$@"
 
-	# wallpaper-select-xfce ubuntu_prepare
+	# wallpaper-select-gnome ubuntu_prepare
 
 	mod_wallpaper_select_ubuntu_prepare_install_package
 
@@ -867,15 +831,15 @@ mod_wallpaper_select_ubuntu_prepare_install_package () {
 
 	util_error_echo "Todo: mod_wallpaper_select_ubuntu_prepare_install_package"
 
-	#echo "sudo apt-get install fzf ueberzug"
-	#sudo apt-get install fzf ueberzug
+	#echo "sudo apt-get install gnome fzf ueberzug"
+	#sudo apt-get install gnome fzf ueberzug
 
 }
 
 ##
-## * https://discover.ubuntu.org/packages/xfce
+## * https://discover.ubuntu.org/packages/gnome
 ## * https://discover.ubuntu.org/packages/fzf
-## * https://archlinux.org/packages/extra/x86_64/xfce/
+## * https://archlinux.org/packages/extra/x86_64/gnome/
 ## * https://archlinux.org/packages/community/x86_64/fzf/
 ## * https://archlinux.org/packages/community/x86_64/ueberzug/
 ##
@@ -893,7 +857,7 @@ mod_wallpaper_select_cd_default () {
 	#echo "mod_wallpaper_select_cd_default"
 	#echo "$@"
 
-	# wallpaper-select-xfce cd_default
+	# wallpaper-select-gnome cd_default
 
 	sys_wallpaper_select_exec_cd_dir "$THE_WALLPAPER_DEFAULT_DIR_PATH"
 
@@ -912,7 +876,7 @@ mod_wallpaper_select_cd_favorite () {
 	#echo "mod_wallpaper_select_cd_favorite"
 	#echo "$@"
 
-	# wallpaper-select-xfce cd_favorite
+	# wallpaper-select-gnome cd_favorite
 
 	sys_wallpaper_init_target_dir "$THE_WALLPAPER_FAVORITE_DIR_PATH"
 
@@ -933,7 +897,7 @@ mod_wallpaper_select_cd_xfce () {
 	#echo "mod_wallpaper_select_cd_xfce"
 	#echo "$@"
 
-	# wallpaper-select-xfce cd_xfce
+	# wallpaper-select-gnome cd_xfce
 
 	sys_wallpaper_select_exec_cd_dir "$THE_WALLPAPER_XFCE_DIR_PATH"
 
@@ -952,7 +916,7 @@ mod_wallpaper_select_path_default () {
 	#echo "mod_wallpaper_select_path_default"
 	#echo "$@"
 
-	# wallpaper-select-xfce path_default
+	# wallpaper-select-gnome path_default
 
 	echo "$THE_WALLPAPER_DEFAULT_DIR_PATH"
 
@@ -971,7 +935,7 @@ mod_wallpaper_select_path_favorite () {
 	#echo "mod_wallpaper_select_path_favorite"
 	#echo "$@"
 
-	# wallpaper-select-xfce path_favorite
+	# wallpaper-select-gnome path_favorite
 
 	echo "$THE_WALLPAPER_FAVORITE_DIR_PATH"
 
@@ -990,7 +954,7 @@ mod_wallpaper_select_path_xfce () {
 	#echo "mod_wallpaper_select_path_xfce"
 	#echo "$@"
 
-	# wallpaper-select-xfce path_xfce
+	# wallpaper-select-gnome path_xfce
 
 	echo "$THE_WALLPAPER_XFCE_DIR_PATH"
 
@@ -1011,9 +975,9 @@ mod_wallpaper_select_shuf () {
 
 	##
 	# ## Example:
-	# $ wallpaper-select-xfce shuf
-	# $ wallpaper-select-xfce shuf /usr/share/backgrounds
-	# $ wallpaper-select-xfce shuf ~/Pictures
+	# $ wallpaper-select-gnome shuf
+	# $ wallpaper-select-gnome shuf /usr/share/backgrounds
+	# $ wallpaper-select-gnome shuf ~/Pictures
 	##
 
 	local target_dir_path="$1"
@@ -1037,9 +1001,9 @@ mod_wallpaper_select_shuf_file_path () {
 
 	##
 	# ## Example:
-	# $ wallpaper-select-xfce shuf_file_path
-	# $ wallpaper-select-xfce shuf_file_path /usr/share/backgrounds
-	# $ wallpaper-select-xfce shuf_file_path ~/Pictures
+	# $ wallpaper-select-gnome shuf_file_path
+	# $ wallpaper-select-gnome shuf_file_path /usr/share/backgrounds
+	# $ wallpaper-select-gnome shuf_file_path ~/Pictures
 	##
 
 	local choose_dir_path="$1"
@@ -1234,7 +1198,7 @@ mod_wallpaper_select__fzf_preview_area () {
 	#echo "mod_wallpaper_select__fzf_preview_area"
 	#echo "$@"
 
-	# wallpaper-select-xfce _fzf_preview_area
+	# wallpaper-select-gnome _fzf_preview_area
 
 	sys_fzf_wallpaper_preview_main "$@"
 
@@ -1271,9 +1235,9 @@ mod_wallpaper_select_list () {
 
 	##
 	# ## Example:
-	# $ wallpaper-select-xfce list
-	# $ wallpaper-select-xfce list /usr/share/backgrounds
-	# $ wallpaper-select-xfce list ~/Pictures
+	# $ wallpaper-select-gnome list
+	# $ wallpaper-select-gnome list /usr/share/backgrounds
+	# $ wallpaper-select-gnome list ~/Pictures
 	##
 
 
@@ -1321,9 +1285,9 @@ mod_wallpaper_select_get () {
 	#echo "mod_wallpaper_select_get"
 	#echo "$@"
 
-	# wallpaper-select-xfce get
+	# wallpaper-select-gnome get
 
-	sys_xfce_wallpaper_get
+	sys_gnome_wallpaper_get
 
 }
 
@@ -1343,8 +1307,8 @@ mod_wallpaper_select_set () {
 
 	##
 	# ## Example:
-	# $ wallpaper-select-xfce set "/usr/share/backgrounds/xfce/palm-wave.jpg"
-	# $ wallpaper-select-xfce set "/usr/share/backgrounds/xfce/palm-wave.jpg" scale
+	# $ wallpaper-select-gnome set "/usr/share/backgrounds/xfce/palm-wave.jpg"
+	# $ wallpaper-select-gnome set "/usr/share/backgrounds/xfce/palm-wave.jpg" scale
 	##
 
 
@@ -1362,14 +1326,13 @@ mod_wallpaper_select_set () {
 		return 1
 	fi
 
+	##option="$(sys_gnome_find_bg_option $option)"
 
-	option="$(sys_xfce_find_bg_option $option)"
-
-	## sys_xfce_set_wallpaper "/usr/share/backgrounds/xfce/palm-wave.jpg"
+	## sys_gnome_wallpaper_set "/usr/share/backgrounds/xfce/palm-wave.jpg"
 
 	util_error_echo "## mod_wallpaper_select_set"
-	util_error_echo "sys_xfce_set_wallpaper $target $option"
-	sys_xfce_wallpaper_set "$target" "$option"
+	util_error_echo "sys_gnome_wallpaper_set $target"
+	sys_gnome_wallpaper_set "$target"
 
 }
 
@@ -1603,12 +1566,6 @@ Example:
 		$ $cmd_name list ~/Pictures/Wallpaper/
 
 		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg"
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" none
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" center
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" tile
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" stretch
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" scale
-		$ $cmd_name set "/usr/share/backgrounds/xfce/palm-wave.jpg" zoom
 
 		$ $cmd_name default
 
