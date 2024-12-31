@@ -2,7 +2,7 @@
 
 # Home
 
-> lika-live-build-respin-cinnamon
+> [lika-live-build-respin-cinnamon](https://github.com/samwhelp/lika-live-build-respin-cinnamon)
 
 
 
